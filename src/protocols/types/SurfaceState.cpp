@@ -17,6 +17,10 @@ Vector2D SSurfaceState::sourceSize() {
     return trc / scale;
 }
 
+Vector2D SSurfaceState::viewportSize() {
+    return viewport.hasDestination ? viewport.destination : sourceSize();
+}
+
 bool SSurfaceState::consumeBufferDamage() const {
     return buffer && !buffer->isSynchronous();
 }
@@ -157,6 +161,10 @@ void SSurfaceState::mergeFrom(SSurfaceState& ref) {
     if (ref.updated.bits.viewport)
         viewport = ref.viewport;
 
+    // a new viewport, scale or transform resizes the surface even without a new buffer
+    if (!ref.updated.bits.buffer && texture && (ref.updated.bits.viewport || ref.updated.bits.scale || ref.updated.bits.transform))
+        size = viewportSize();
+
     if (ref.updated.bits.colorRepresentation)
         colorRepresentation = ref.colorRepresentation;
 
@@ -228,6 +236,10 @@ void SSurfaceState::updateFrom(SSurfaceState& ref) {
 
     if (ref.updated.bits.viewport)
         viewport = ref.viewport;
+
+    // a new viewport, scale or transform resizes the surface even without a new buffer
+    if (!ref.updated.bits.buffer && texture && (ref.updated.bits.viewport || ref.updated.bits.scale || ref.updated.bits.transform))
+        size = viewportSize();
 
     if (ref.updated.bits.colorRepresentation)
         colorRepresentation = ref.colorRepresentation;

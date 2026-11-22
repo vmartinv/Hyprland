@@ -105,6 +105,7 @@ struct SSurfaceState {
         CBox     source;
     } viewport;
     Vector2D sourceSize();
+    Vector2D viewportSize(); // the surface size the viewport, scale and transform give the current buffer
 
     // color representation protocol surface state
     NColorManagement::SColorRepresentation colorRepresentation;
