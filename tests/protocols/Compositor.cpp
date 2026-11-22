@@ -227,6 +227,47 @@ TEST_F(CSurfaceCommitTest, ColorRepresentationOnlyCommitReselectsTexture) {
     EXPECT_EQ(surf->m_current.texture, buf->m_texture);
 }
 
+TEST_F(CSurfaceCommitTest, ViewportOrScaleOnlyCommitUpdatesSize) {
+    auto surf = surface();
+    attach(surf, buffer());
+    ASSERT_EQ(surf->m_current.size, Vector2D(16, 16));
+
+    // resized through the viewport only, without a new buffer
+    surf->m_pending.viewport.hasDestination = true;
+    surf->m_pending.viewport.destination    = {200, 100};
+    surf->m_pending.updated.bits.viewport   = true;
+    commit(surf);
+    EXPECT_EQ(surf->m_current.size, Vector2D(200, 100));
+
+    surf->m_pending.viewport.hasDestination = false;
+    surf->m_pending.updated.bits.viewport   = true;
+    commit(surf);
+    EXPECT_EQ(surf->m_current.size, Vector2D(16, 16));
+
+    surf->m_pending.scale              = 2;
+    surf->m_pending.updated.bits.scale = true;
+    commit(surf);
+    EXPECT_EQ(surf->m_current.size, Vector2D(8, 8));
+}
+
+TEST_F(CSurfaceCommitTest, MergedViewportOnlyCommitUpdatesSize) {
+    auto          buf = buffer();
+
+    SSurfaceState queued;
+    queued.texture             = buf->m_texture;
+    queued.size                = {16, 16};
+    queued.bufferSize          = {16, 16};
+    queued.updated.bits.buffer = true;
+
+    // a viewport-only commit merged onto a queued commit with a buffer
+    SSurfaceState next;
+    next.viewport.hasDestination = true;
+    next.viewport.destination    = {200, 100};
+    next.updated.bits.viewport   = true;
+    queued.mergeFrom(next);
+    EXPECT_EQ(queued.size, Vector2D(200, 100));
+}
+
 TEST_F(CSurfaceCommitTest, SynchronizedNullBufferUnmapsOnlyOnParentCommit) {
     auto parent = surface(), child = surface();
     auto [sub, id] = subsurface(child, parent);
